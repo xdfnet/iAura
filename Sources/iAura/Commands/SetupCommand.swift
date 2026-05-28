@@ -46,9 +46,12 @@ struct SetupCommand: AsyncParsableCommand {
             throw RuntimeError("找不到 launchd 模板")
         }
         let template = try String(contentsOf: templateURL, encoding: .utf8)
+        let logPath = NSString(string: "~/.config/iaura/daemon.log").expandingTildeInPath
         let rendered = template
             .replacingOccurrences(of: "BINARY_PATH_PLACEHOLDER", with: runtime.launcherPath)
             .replacingOccurrences(of: "WORKING_DIR_PLACEHOLDER", with: runtime.workingDirectory)
+            .replacingOccurrences(of: "LOG_PATH_PLACEHOLDER", with: logPath)
+            .replacingOccurrences(of: "HOME_PLACEHOLDER", with: NSHomeDirectory())
         try rendered.write(toFile: plistPath, atomically: true, encoding: .utf8)
 
         let uid = String(getuid())
@@ -60,7 +63,7 @@ struct SetupCommand: AsyncParsableCommand {
     private func installRuntimeArtifacts() throws -> (launcherPath: String, workingDirectory: String) {
         let fm = FileManager.default
         let root = fm.currentDirectoryPath
-        let releaseDir = (root as NSString).appendingPathComponent(".build/arm64-apple-macosx/release")
+        let releaseDir = (root as NSString).appendingPathComponent(".build/release")
         let releaseBinary = (releaseDir as NSString).appendingPathComponent("iAura")
         let releaseMetallib = (releaseDir as NSString).appendingPathComponent("default.metallib")
 

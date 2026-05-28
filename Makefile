@@ -1,5 +1,4 @@
-VERSION  := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "dev")
-COMMIT   := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+.PHONY: build debug install restart clean
 
 RUNTIME   := $(HOME)/.local/share/iaura/runtime
 BIN       := $(RUNTIME)/iAura
@@ -7,13 +6,7 @@ METALLIB  := $(RUNTIME)/default.metallib
 LAUNCHER  := $(HOME)/.local/bin/iaura
 LABEL     := com.user.iaura
 
-.PHONY: build debug install deploy restart clean
-
 build:
-	@echo 'enum BuildInfo {' > Sources/iAura/Commands/BuildInfo.swift
-	@echo '    static let version = "$(VERSION)"' >> Sources/iAura/Commands/BuildInfo.swift
-	@echo '    static let commit = "$(COMMIT)"' >> Sources/iAura/Commands/BuildInfo.swift
-	@echo '}' >> Sources/iAura/Commands/BuildInfo.swift
 	swift build -c release
 
 debug: build
@@ -29,10 +22,9 @@ install: build
 	@echo 'exec "$(BIN)" "$$@"' >> $(LAUNCHER)
 	chmod 755 $(LAUNCHER)
 	@echo "✓ 已安装: $(BIN)"
-	@echo "✓ launcher: $(LAUNCHER)"
 
 restart:
-	@launchctl kickstart -k gui/$$(id -u)/$(LABEL) 2>/dev/null && echo "✓ 已重启" || echo "✗ 未运行，请先 setup"
+	@launchctl kickstart -k gui/$$(id -u)/$(LABEL) 2>/dev/null && echo "✓ 已重启" || echo "✗ 未运行"
 
 clean:
 	@rm -rf .build

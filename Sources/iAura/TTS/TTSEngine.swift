@@ -21,35 +21,44 @@ actor TTSEngine {
         Log.info("TTS 模型加载完成")
     }
 
-    /// 流式生成 — 返回 float32 采样序列 (24kHz mono)
-    func synthesize(text: String, voiceID: String) async throws -> [Data] {
-        guard let model = model else { throw TTSError.notLoaded }
+    func synthesizeStream(text: String, voiceID: String) -> AsyncThrowingStream<Data, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    guard let model = model else { throw TTSError.notLoaded }
 
-        let voice = config.voice(id: voiceID)
-        let refText = voice?.refText
-        let refAudio = try loadRefAudio(voice?.refAudio, sampleRate: model.sampleRate)
-        Log.info("TTS 请求: voice=\(voiceID) text_chars=\(text.count) has_ref_audio=\(refAudio != nil) has_ref_text=\(refText != nil)")
-        let stream = model.generateStream(
-            text: text,
-            voice: nil,
-            refAudio: refAudio,
-            refText: refText,
-            language: "Chinese",
-            generationParameters: model.defaultGenerationParameters,
-            streamingInterval: 0.08
-        )
+                    let voice = config.voice(id: voiceID)
+                    let refText = voice?.refText
+                    let refAudio = try loadRefAudio(voice?.refAudio, sampleRate: model.sampleRate)
+                    Log.info("TTS 请求: voice=\(voiceID) text_chars=\(text.count) stream=true")
 
-        var chunks: [Data] = []
-        var sampleCount = 0
-        for try await event in stream {
-            if case .audio(let chunk) = event {
-                let samples: [Float] = chunk.asArray(Float.self)
-                sampleCount += samples.count
-                chunks.append(audioToPCM(samples))
+                    let stream = model.generateStream(
+                        text: text,
+                        voice: nil,
+                        refAudio: refAudio,
+                        refText: refText,
+                        language: "Chinese",
+                        generationParameters: model.defaultGenerationParameters,
+                        streamingInterval: 0.08
+                    )
+
+                    var chunkIdx = 0
+                    for try await event in stream {
+                        if case .audio(let chunk) = event {
+                            let samples: [Float] = chunk.asArray(Float.self)
+                            let pcm = audioToPCM(samples)
+                            Log.debug("TTS 流式 [\(chunkIdx)]: samples=\(samples.count) pcm_bytes=\(pcm.count)")
+                            continuation.yield(pcm)
+                            chunkIdx += 1
+                        }
+                    }
+                    Log.info("TTS 流式完成: chunks=\(chunkIdx)")
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
             }
         }
-        Log.info("TTS 生成完成: chunks=\(chunks.count) samples=\(sampleCount)")
-        return chunks
     }
 
     private func expandPath(_ path: String) -> String {
@@ -59,9 +68,7 @@ actor TTSEngine {
     private func resolveRefAudioPath(_ path: String?) -> String? {
         guard let path, !path.isEmpty else { return nil }
         let expanded = expandPath(path)
-        if expanded.hasPrefix("/") {
-            return expanded
-        }
+        if expanded.hasPrefix("/") { return expanded }
         if let base = config.configBaseDir, !base.isEmpty {
             return (base as NSString).appendingPathComponent(expanded)
         }

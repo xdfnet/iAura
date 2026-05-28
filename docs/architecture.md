@@ -1,151 +1,82 @@
 # iAura 架构
 
-iAura 是 macOS 本地语音播报守护进程，纯 Swift 实现。通过 mlx-audio-swift 做 TTS 推理，AVAudioEngine 原生播放，Unix Socket 接收播报请求。
-
-## 整体数据流
+## 整体
 
 ```
-Claude / Codex / Pi 完成事件
-        │
-        ▼
-   hook 脚本 ──→ nc -U ~/.config/iaura/iaura.sock
-        │
-        ▼
-   iAura (Swift) ────────────────────────────────────┐
-   ├ SocketServer   Unix Socket 监听                  │
-   ├ TextCleaner    清洗 Markdown / 代码 / 路径        │
-   ├ PlaybackQueue  actor 串行队列                     │
-   │                                                  │
-   ├ TTSEngine                                          │
-   │   ├ mlx-audio-swift 模型加载                      │
-   │   ├ generateStream()  流式推理 (AsyncStream)      │
-   │   └ AudioPipeline    24k→48k 上采样 + PCM 转换    │
-   │                                                  │
-   └ AudioPlayer                                      │
-       └ AVAudioEngine → scheduleBuffer → 🔊          │
+┌─ Claude Code ──┐    ┌─ Codex ────────┐    ┌─ Pi ──────────┐
+│ hook-speak.sh   │    │ hook-speak.sh  │    │ iaura.ts       │
+│ bash ... claude │    │ bash ... codex │    │ iaura speak    │
+└────┬────────────┘    └────┬───────────┘    └────┬───────────┘
+     │                      │                      │
+     └──────────────────────┼──────────────────────┘
+                            │ iaura speak --source <name> <text>
+                            ▼
+                   Unix Socket (~/.config/iaura/iaura.sock)
+                            │
+                            ▼
+┌───────────────────────────────────────────────────────────┐
+│                   iAura Daemon (launchd)                   │
+│                                                            │
+│  SocketServer → ConnectionHandler                          │
+│      解析 {source:claude,voice:wanwan}                      │
+│      + TextCleaner 清洗 Markdown                           │
+│                         │                                  │
+│                         ▼                                  │
+│                  PlaybackQueue (串行队列)                    │
+│                         │                                  │
+│              ┌──────────┴──────────┐                       │
+│              ▼                     ▼                       │
+│        TTSEngine              AudioPlayer                  │
+│     synthesizeStream()      scheduleBuffer()               │
+│     流式生成 PCM              流式播放                       │
+│     (MLX GPU)               (AVAudioEngine)                 │
+└───────────────────────────────────────────────────────────┘
 ```
 
-## 代码结构
+## 模块
+
+| 模块 | 路径 | 职责 |
+|------|------|------|
+| `EntryPoint` | `Sources/iAura/EntryPoint.swift` | CLI 入口，注册 8 个子命令 |
+| `Commands/` | `Sources/iAura/Commands/` | speak/serve/stop/restart/status/version/voice/setup |
+| `Daemon/` | `Sources/iAura/Daemon/Daemon.swift` | 守护进程：加载模型 → 监听 Socket |
+| `Network/` | `Sources/iAura/Network/` | Unix Socket 服务器 + 连接处理 |
+| `Audio/` | `Sources/iAura/Audio/` | AudioPlayer(串行队列 scheduleBuffer) + PlaybackQueue |
+| `TTS/` | `Sources/iAura/TTS/TTSEngine.swift` | MLX TTS 流式推理，AsyncThrowingStream<Data> |
+| `Hooks/` | `Sources/iAura/Hooks/HookInstaller.swift` | 安装 Claude/Codex/Pi Hook |
+| `iAuraKit/` | `Sources/iAuraKit/` | 共享库：Config 加载、TextCleaner、AudioPipeline |
+
+## 数据流
 
 ```
-Sources/
-├── iAura/                    # 可执行目标
-│   ├── EntryPoint.swift      # @main + ArgumentParser
-│   ├── Commands/
-│   │   ├── ServeCommand.swift    # 守护进程
-│   │   ├── SpeakCommand.swift    # 一次性播报
-│   │   ├── SetupCommand.swift    # 初始化
-│   │   ├── VoiceCommand.swift    # 音色管理
-│   │   └── StopCommand.swift     # 停止
-│   ├── Daemon/
-│   │   ├── Daemon.swift          # 生命周期/信号
-│   │   └── LaunchAgent.swift     # plist 管理
-│   ├── Config/
-│   │   ├── Config.swift          # 加载/校验
-│   │   └── ConfigModels.swift    # Codable 模型
-│   ├── Network/
-│   │   ├── SocketServer.swift    # Unix Socket + DispatchSource
-│   │   └── ConnectionHandler.swift
-│   ├── Audio/
-│   │   ├── AudioPlayer.swift     # AVAudioEngine
-│   │   └── PlaybackQueue.swift   # actor 队列
-│   ├── TTS/
-│   │   ├── TTSEngine.swift       # mlx-audio-swift 封装
-│   │   └── ModelManager.swift    # 模型管理
-│   ├── Text/
-│   │   └── TextCleaner.swift     # 文本清洗
-│   ├── Hooks/
-│   │   └── HookInstaller.swift   # AI 工具集成
-│   └── Resources/
-│       ├── hook-speak.sh         # Hook 脚本
-│       ├── hook-speak.js         # 文本提取
-│       ├── com.user.iaura.plist  # LaunchAgent
-│       └── config.example.json   # 示例配置
-│
-└── iAuraKit/                # 库目标（可测试）
-    ├── Config.swift             # 配置模型
-    ├── TextCleaner.swift        # 文本清洗
-    └── AudioPipeline.swift      # 音频转换
+1. CLI: iaura speak -s codex "你好"
+2. SpeakCommand 拼 {source:codex}你好 → Unix Socket
+3. ConnectionHandler.handle()
+   - 解 {source:codex} → source="codex"
+   - 查 config.sourceVoices["codex"] → voiceID="wanwan"
+   - if 有 {voice:xxx} → 显式覆盖
+   - cleanText() 清洗 Markdown
+4. PlaybackQueue.enqueue(job)
+5. TTSEngine.synthesizeStream() → AsyncThrowingStream<Data>
+   - MLX GPU 推理，每 80ms 一个 float32 chunk
+   - audioToPCM: 24k→48k 上采样 + float32→int16 转换
+6. AudioPlayer.write(pcm) → serialQueue.sync { scheduleBuffer }
+   - AVAudioPlayerNode.scheduleBuffer 流式播放
+7. player.drain() → await Task.sleep(估算时长 + 0.5s)
 ```
 
-## 并发模型
+## 音色匹配
+
+优先级：`显式 voice > sourceVoices 映射 > defaultVoice`
 
 ```
-SocketServer (actor, DispatchSource)
-    │  非阻塞 accept()
-    ▼
-ConnectionHandler (每个连接一个 Task)
-    │  读取文本 → 解析 {source:...} → 入队
-    ▼
-PlaybackQueue (actor, 串行)
-    │  AsyncStream 驱动，一次处理一个播报
-    ▼
-TTSEngine.generateStream()
-    │  AsyncThrowingStream<[Float]>，流式产出音频
-    ▼
-AudioPlayer.write()
-    │  scheduleBuffer 异步投喂，FIFO 排队播放
-    ▼
-AudioPlayer.drain()
-    │  等所有 buffer 播完
+config.json:
+  defaultVoice: "mizai"
+  sourceVoices: { claude: "taozi", codex: "wanwan", pi: "dayi" }
+  voices: [{ id, refAudio, refText }, ...]
+
+ConnectionHandler.extractVoicePrefix():
+  if {voice:xxx} in payload  → 直接用 xxx
+  else if {source:s}         → sourceVoices[s] ?? defaultVoice
+  else                       → defaultVoice
 ```
-
-**关键保证**：
-- `PlaybackQueue` actor 确保一次只有一个播报在处理
-- `AudioPlayer` 使用 `AVAudioPlayerNode.scheduleBuffer` 的 FIFO 特性保证顺序
-- `SocketServer` actor 确保 socket 状态安全
-
-## 播放端
-
-AVAudioEngine 原生访问（无需 CGo）：
-
-```swift
-let engine = AVAudioEngine()
-let node = AVAudioPlayerNode()
-engine.attach(node)
-engine.connect(node, to: engine.mainMixerNode, format: format)
-engine.start()
-node.play()
-
-// 流式写入
-node.scheduleBuffer(pcmBuffer)
-```
-
-## Hook 机制
-
-iAura 通过 bash hook 脚本提取 `last_assistant_message`，再调用 `iaura speak` 发送给本地服务：
-
-```
-Claude Stop Hook → bash hook-speak.sh claude < payload.json
-                 → 内联 Node 解析 JSON
-                 → iaura speak --source claude "<text>"
-                 → ~/.config/iaura/iaura.sock
-```
-
-## 配置
-
-iAura 读取 `~/.config/iaura/config.json`。模型、音色、来源到音色的映射都从这个文件加载。
-
-## 与 iVox 对比
-
-| 维度 | iVox | iAura |
-|------|------|-------|
-| 语言 | Go + Python + C | Swift |
-| 进程 | 2 (Go + Python) | 1 |
-| TTS 推理 | Go→pipe→Python→MLX | Swift→mlx-audio-swift→MLX |
-| 音频播放 | CGo→AVAudioEngine | AVAudioEngine 原生 |
-| 并发 | goroutine + chan | actor + AsyncStream |
-| 二进制 | Go ~10MB + venv | Swift ~3MB |
-| 内存 | ~3.4GB | ~2.8GB |
-| 依赖 | Go, Python, npm | Swift 6 + SPM |
-| 分发 | npm | Homebrew / 直接下载 |
-
-## 关键性能
-
-| 指标 | 数值 |
-|------|------|
-| 启动（含模型预热） | ~2s |
-| 首帧延迟 | ~300ms |
-| 合成速度 | ~76ms/字 (模型限制) |
-| 模型 | 8bit 量化，约 2.9GB |
-| 常驻内存 | ~2.8GB |

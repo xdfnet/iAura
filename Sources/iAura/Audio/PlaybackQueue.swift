@@ -34,13 +34,15 @@ actor PlaybackQueue {
         let startedAt = Date()
 
         do {
-            let chunks = try await engine.synthesize(text: job.text, voiceID: job.voiceID)
+            let stream = await engine.synthesizeStream(text: job.text, voiceID: job.voiceID)
             var totalBytes = 0
-            for chunk in chunks {
-                totalBytes += chunk.count
-                player.write(chunk)
+            var chunkCount = 0
+            for try await pcm in stream {
+                chunkCount += 1
+                totalBytes += pcm.count
+                player.write(pcm)
             }
-            Log.info("播放写入: chunks=\(chunks.count) bytes=\(totalBytes)")
+            Log.info("播放写入: chunks=\(chunkCount) bytes=\(totalBytes)")
             await player.drain()
             Log.info("TTS 播放完成 [\(job.source)] \(String(format: "%.1f", -startedAt.timeIntervalSinceNow))s")
         } catch {
