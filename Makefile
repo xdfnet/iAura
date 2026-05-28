@@ -1,4 +1,5 @@
-.PHONY: build debug install deploy restart clean
+VERSION  := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "dev")
+COMMIT   := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 RUNTIME   := $(HOME)/.local/share/iaura/runtime
 BIN       := $(RUNTIME)/iAura
@@ -6,8 +7,14 @@ METALLIB  := $(RUNTIME)/default.metallib
 LAUNCHER  := $(HOME)/.local/bin/iaura
 LABEL     := com.user.iaura
 
+.PHONY: build debug install deploy restart clean
+
 build:
-	@swift build -c release
+	@echo 'enum BuildInfo {' > Sources/iAura/Commands/BuildInfo.swift
+	@echo '    static let version = "$(VERSION)"' >> Sources/iAura/Commands/BuildInfo.swift
+	@echo '    static let commit = "$(COMMIT)"' >> Sources/iAura/Commands/BuildInfo.swift
+	@echo '}' >> Sources/iAura/Commands/BuildInfo.swift
+	swift build -c release
 
 debug: build
 	@echo "● 前台启动 daemon（Ctrl-C 停止）"
