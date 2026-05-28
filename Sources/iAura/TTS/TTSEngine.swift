@@ -21,6 +21,17 @@ actor TTSEngine {
         Log.info("TTS 模型加载完成")
     }
 
+    func warmup(voiceID: String) async {
+        do {
+            Log.info("模型预热 [\(voiceID)]...")
+            let stream = synthesizeStream(text: "你好，模型预热完成。", voiceID: voiceID)
+            for try await _ in stream { /* GPU pipeline 预热 */ }
+            Log.info("模型预热完成 [\(voiceID)]")
+        } catch {
+            Log.info("模型预热跳过 [\(voiceID)]: \(error)")
+        }
+    }
+
     func synthesizeStream(text: String, voiceID: String) -> AsyncThrowingStream<Data, Error> {
         AsyncThrowingStream { continuation in
             Task {

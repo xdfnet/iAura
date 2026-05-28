@@ -16,14 +16,12 @@ actor Daemon {
     func run() async throws {
         Log.info("iAura 守护进程启动")
 
-        // 加载模型
         try await engine.loadModel()
+        await engine.warmup(voiceID: config.defaultVoice)
 
-        // 信号处理
         signal(SIGINT) { _ in exit(0) }
         signal(SIGTERM) { _ in exit(0) }
 
-        // 启动 Socket 服务器
         let socketPath = NSString(string: "~/.config/iaura/iaura.sock").expandingTildeInPath
         let dir = (socketPath as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: nil)
@@ -34,7 +32,6 @@ actor Daemon {
 
         Log.info("iAura 已启动，监听 \(socketPath)")
 
-        // 保持运行
         while true {
             try await Task.sleep(for: .seconds(3600))
         }
