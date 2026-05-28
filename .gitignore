@@ -2,3 +2,4 @@
 DerivedData/
 *.xcodeproj
 .DS_Store
+*.profraw
