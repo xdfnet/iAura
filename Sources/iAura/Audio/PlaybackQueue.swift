@@ -30,10 +30,6 @@ actor PlaybackQueue {
         guard !jobs.isEmpty else { isProcessing = false; return }
         isProcessing = true
         media.pause()
-        defer {
-            media.resume()
-            isProcessing = false
-        }
 
         while !jobs.isEmpty {
             let job = jobs.removeFirst()
@@ -56,6 +52,14 @@ actor PlaybackQueue {
             } catch {
                 Log.error("TTS 合成失败: \(error)")
             }
+        }
+
+        isProcessing = false
+        media.resume()
+
+        // 处理期间可能有新任务入队，重新 drain
+        if !jobs.isEmpty {
+            await processNext()
         }
     }
 }
