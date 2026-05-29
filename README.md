@@ -1,21 +1,27 @@
 # iAura
 
-macOS 本地语音播报守护进程，纯 Swift 实现。
+<p align="center">
+  <img src="https://img.shields.io/badge/Swift-6.0-FA7343?logo=swift&logoColor=white" alt="Swift 6.0">
+  <img src="https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Apple_Silicon-M1%2B-A2AAAD?logo=apple&logoColor=white" alt="Apple Silicon">
+  <img src="https://img.shields.io/badge/TTS-MLX_GPU-7B68EE?logo=mlflow&logoColor=white" alt="MLX GPU TTS">
+  <img src="https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white" alt="MIT">
+</p>
 
-## 特性
+<p align="center"><b>macOS 本地语音播报守护进程，纯 Swift 实现。</b></p>
 
-- **纯 Swift** — 无 Python、无 Go，单进程运行
-- **原生 AVAudioEngine** — 直接调用 Apple 音频框架，零跨语言桥接
-- **MLX 推理** — 通过 mlx-audio-swift 在 Apple Silicon GPU 上运行 Qwen3-TTS 模型
-- **流式合成+播放** — 边合成边播，`scheduleBuffer` 首帧延迟 ~300ms
-- **多音色** — 4 种内置音色，支持按来源自动匹配 + 显式覆盖
-- **AI 工具集成** — 自动接入 Claude Code / Codex / Pi，Stop Hook 回复自动播报
-- **launchd 守护** — `KeepAlive` 挂了自动拉起，开机自启
+---
+
+| 🎙️ 纯 Swift | ⚡ 流式合成 | 🎵 媒体联动 | 🎭 多音色 | 🔌 AI 集成 |
+|:---:|:---:|:---:|:---:|:---:|
+| 零跨语言桥接<br>单进程运行 | 边合成边播<br>首帧 ~300ms | 播报自动暂停<br>播完恢复音乐 | 4 种内置音色<br>按来源自动匹配 | Claude Code<br>Codex · Pi |
+
+---
 
 ## 安装
 
 ```bash
-git clone <repo> && cd iAura
+git clone https://github.com/xdfnet/iAura && cd iAura
 make install      # 编译 + 部署到 ~/.local
 iaura setup       # 初始化配置、Hook、launchd
 ```
@@ -31,6 +37,7 @@ iaura setup       # 初始化配置、Hook、launchd
 | `iaura status` | 查看运行状态 |
 | `iaura version` | 显示版本信息 |
 | `iaura voice list` | 列出所有可用音色 |
+| `iaura model pull` | 下载 Qwen3-TTS 模型 |
 | `iaura setup` | 初始化环境 |
 
 ## 开发
@@ -60,6 +67,7 @@ make clean         # 清理 .build
 
 - `sourceVoices` — 按 AI 工具自动匹配音色
 - 播报时 `--voice` 显式指定优先级最高
+- 播报期间用系统媒体键自动暂停/恢复音乐
 
 ## 部署结构
 
