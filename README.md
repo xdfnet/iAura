@@ -8,16 +8,16 @@
   <img src="https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white" alt="MIT">
 </p>
 
-<p align="center"><b>让你的 AI 助手开口说话。</b></p>
+<p align="center"><b>让 Claude / Codex / Pi 开口说话。</b></p>
 
 ---
 
 > 写代码时懒得看屏幕？iAura 自动把你的 AI 助手的回复读给你听。  
 > 音色自然、反应快、不打扰你正在播的音乐。
 
-| 🗣️ 替我读 | ⚡ 秒回 | 🎵 不打断 | 🎭 认得出谁在说 | 🔌 开箱即用 |
+| 🗣️ 替我读 | ⚡ 秒回 | 🎵 不打断 | 🎭 让 Claude/Codex/Pi 开口 | 🔌 开箱即用 |
 |:---:|:---:|:---:|:---:|:---:|
-| AI 回复自动播报<br>不用盯着屏幕 | 开口不到半秒<br>听到的速度 | 播报前暂停音乐<br>播完自动恢复 | 每个 AI 不同音色<br>Claude/Codex/Pi | 一条命令装好<br>自动注册自启动 |
+| AI 回复自动播报<br>不用盯着屏幕 | 开口不到半秒<br>听到的速度 | 播报前暂停音乐<br>播完自动恢复 | 换个音色，换种心情 | 一条命令装好<br>自动注册自启动 |
 
 ---
 
