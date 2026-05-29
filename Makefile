@@ -5,6 +5,8 @@ BIN       := $(RUNTIME)/iAura
 METALLIB  := $(RUNTIME)/default.metallib
 LAUNCHER  := $(HOME)/.local/bin/iaura
 LABEL     := com.user.iaura
+SIGN_ID   := 4A287668E97BC130AA6D19F4D64799394CAACBAD
+ENTITLEMENTS := entitlements.plist
 
 build:
 	swift build -c release
@@ -15,6 +17,7 @@ debug: build
 
 install: build
 	@mkdir -p $(RUNTIME) $(HOME)/.local/bin
+	codesign --force --sign $(SIGN_ID) --entitlements $(ENTITLEMENTS) .build/release/iAura
 	cp .build/release/iAura $(BIN)
 	cp .build/release/default.metallib $(METALLIB)
 	chmod 755 $(BIN)
