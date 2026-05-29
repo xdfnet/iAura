@@ -23,14 +23,6 @@
 
 ## 安装
 
-### Homebrew（推荐）
-
-```bash
-brew tap xdfnet/iaura && brew install iaura
-iaura model pull          # 下载模型，只需一次
-```
-
-### 从源码安装
 
 ```bash
 git clone https://github.com/xdfnet/iAura && cd iAura
@@ -51,8 +43,7 @@ git clone https://github.com/xdfnet/iAura && cd iAura
 | `iaura status` | 查看运行状态 |
 | `iaura version` | 显示版本信息 |
 | `iaura voice list` | 列出所有可用音色 |
-| `iaura model pull` | 下载 Qwen3-TTS 模型 |
-| `iaura setup` | 初始化环境 |
+| `| `iaura setup` | 初始化环境 |
 
 ## 开发
 
