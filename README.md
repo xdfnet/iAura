@@ -23,9 +23,18 @@
 
 ## 安装
 
+### Homebrew（推荐）
+
+```bash
+brew tap xdfnet/iaura && brew install iaura
+iaura model pull          # 下载模型，只需一次
+```
+
+### 从源码安装
+
 ```bash
 git clone https://github.com/xdfnet/iAura && cd iAura
-./install.sh          # 编译 + 签名 + 部署 + 守护，一条命令搞定
+./install.sh              # 编译 + 签名 + 部署 + 守护
 ```
 
 > 首次安装后去 **系统设置 → 隐私与安全性 → 辅助功能** 添加 iAura，  
@@ -38,7 +47,7 @@ git clone https://github.com/xdfnet/iAura && cd iAura
 | `iaura speak [-s source] [-v voice] <文本>` | 一次性播报 |
 | `iaura serve` | 启动守护进程 |
 | `iaura stop` | 停止守护进程 |
-| `iaura restart` | 重启守护进程（launchd kickstart） |
+| `iaura restart` | 重启守护进程 |
 | `iaura status` | 查看运行状态 |
 | `iaura version` | 显示版本信息 |
 | `iaura voice list` | 列出所有可用音色 |
@@ -51,7 +60,7 @@ git clone https://github.com/xdfnet/iAura && cd iAura
 make build         # 编译 release
 make debug         # 编译 + 前台启动（看日志）
 make install       # 编译 + 部署
-make restart       # 重启 launchd daemon
+make restart       # 重启 launchd 守护
 make clean         # 清理 .build
 ```
 
@@ -75,8 +84,6 @@ make clean         # 清理 .build
 - 播报期间用系统媒体键自动暂停/恢复音乐
 
 ## 部署结构
-
-所有运行时文件在 `~` 下，删掉项目目录无影响：
 
 ```
 ~/.local/bin/iaura                         # CLI 入口
