@@ -57,7 +57,7 @@ iaura serve               # 前台启动（调试用）
 
 ```bash
 iaura voice list          # 列出所有音色
-iaura voice add --id my --name "我的音色" --ref-audio voice.wav --ref-text "参考文本"
+iaura voice add -i my -n "我的音色" --ref-audio voice.wav --ref-text "参考文本"
 iaura voice remove my     # 删除音色
 ```
 
