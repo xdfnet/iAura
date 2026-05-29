@@ -8,13 +8,16 @@
   <img src="https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white" alt="MIT">
 </p>
 
-<p align="center"><b>macOS 本地语音播报守护进程，纯 Swift 实现。</b></p>
+<p align="center"><b>让你的 AI 助手开口说话。</b></p>
 
 ---
 
-| 🎙️ 纯 Swift | ⚡ 流式合成 | 🎵 媒体联动 | 🎭 多音色 | 🔌 AI 集成 |
+> 写代码时懒得看屏幕？iAura 自动把你的 AI 助手的回复读给你听。  
+> 音色自然、反应快、不打扰你正在播的音乐。
+
+| 🗣️ 替我读 | ⚡ 秒回 | 🎵 不打断 | 🎭 认得出谁在说 | 🔌 开箱即用 |
 |:---:|:---:|:---:|:---:|:---:|
-| 零跨语言桥接<br>单进程运行 | 边合成边播<br>首帧 ~300ms | 播报自动暂停<br>播完恢复音乐 | 4 种内置音色<br>按来源自动匹配 | Claude Code<br>Codex · Pi |
+| AI 回复自动播报<br>不用盯着屏幕 | 开口不到半秒<br>听到的速度 | 播报前暂停音乐<br>播完自动恢复 | 每个 AI 不同音色<br>Claude/Codex/Pi | 一条命令装好<br>自动注册自启动 |
 
 ---
 
