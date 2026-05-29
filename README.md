@@ -23,36 +23,77 @@
 
 ## 安装
 
-
 ```bash
 git clone https://github.com/xdfnet/iAura && cd iAura
-./install.sh              # 编译 + 签名 + 部署 + 守护
+./install.sh              # 编译 + 签名 + 部署，一条命令搞定
 ```
 
 > 首次安装后去 **系统设置 → 隐私与安全性 → 辅助功能** 添加 iAura，  
 > 播报时就能自动暂停音乐了（可选）。
 
-## CLI
+## 使用
 
-| 命令 | 说明 |
-|------|------|
-| `iaura speak [-s source] [-v voice] <文本>` | 一次性播报 |
-| `iaura serve` | 启动守护进程 |
-| `iaura stop` | 停止守护进程 |
-| `iaura restart` | 重启守护进程 |
-| `iaura status` | 查看运行状态 |
-| `iaura version` | 显示版本信息 |
-| `iaura voice list` | 列出所有可用音色 |
-| `| `iaura setup` | 初始化环境 |
+安装完成后，服务已经在后台运行，无需任何操作。AI 助手回复时会自动播报。
+
+### 基本命令
+
+```bash
+iaura status              # 查看服务是否在跑
+iaura version             # 版本信息
+iaura speak "你好"         # 手动播报一段文本
+iaura speak -s codex "文本" # 指定来源（匹配音色）
+iaura speak -v dayi "文本"  # 指定音色
+```
+
+### 管理命令
+
+```bash
+iaura restart             # 重启服务
+iaura stop                # 停止服务
+iaura serve               # 前台启动（调试用）
+```
+
+### 音色
+
+```bash
+iaura voice list          # 列出所有音色
+iaura voice add --id my --name "我的音色" --ref-audio voice.wav --ref-text "参考文本"
+iaura voice remove my     # 删除音色
+```
+
+| 音色 ID | 名称 | 说明 |
+|---------|------|------|
+| mizai | 米仔 | 温暖自然，默认音色 |
+| taozi | 甜妹桃子 | 活泼甜美，Claude 默认 |
+| wanwan | 湾湾小何 | 温柔知性，Codex 默认 |
+| dayi | 大易 | 沉稳可靠，Pi 默认 |
+
+音色匹配规则：`显式指定 --voice` > `sourceVoices 映射` > `defaultVoice`
+
+### 模型
+
+```bash
+iaura model pull          # 下载 Qwen3-TTS 模型（首次必做）
+```
+
+### Hook 集成
+
+安装后自动接入三个 AI 工具：
+
+- **Claude Code** → `~/.claude/settings.json` — Stop Hook
+- **Codex** → `~/.codex/hooks.json` + `config.toml` — Stop Hook + trusted_hash
+- **Pi** → `~/.pi/agent/settings.json` — Extension 注册
+
+Codex 用户注意：首次触发 Hook 时需要确认允许，之后自动生效。
 
 ## 开发
 
 ```bash
-make build         # 编译 release
-make debug         # 编译 + 前台启动（看日志）
-make install       # 编译 + 部署
-make restart       # 重启 launchd 守护
-make clean         # 清理 .build
+make build                # 编译 release
+make debug                # 编译 + 前台启动（看日志）
+make install              # 编译 + 签名 + 部署
+make restart              # 重启 launchd 守护
+make clean                # 清理 .build
 ```
 
 ## 配置
@@ -70,35 +111,7 @@ make clean         # 清理 .build
 }
 ```
 
-- `sourceVoices` — 按 AI 工具自动匹配音色
-- 播报时 `--voice` 显式指定优先级最高
-- 播报期间用系统媒体键自动暂停/恢复音乐
-
-## 部署结构
-
-```
-~/.local/bin/iaura                         # CLI 入口
-~/.local/share/iaura/runtime/iAura         # 二进制
-~/.local/share/iaura/runtime/default.metallib  # MLX Metal 库
-~/.config/iaura/config.json                # 配置
-~/.config/iaura/voices/*.wav               # 参考音色
-~/.config/iaura/hook-speak.sh              # Claude Code / Codex Hook
-~/.config/iaura/iaura.ts                   # Pi 扩展
-~/Library/LaunchAgents/com.user.iaura.plist # launchd 守护
-```
-
-## 架构
-
-```
-iaura speak --source codex "文本"
-  → Unix Socket {source:codex}文本
-  → ConnectionHandler 解析 source/voice
-  → PlaybackQueue 入队
-  → TTSEngine.synthesizeStream()  流式生成 PCM
-  → AudioPlayer.write()           scheduleBuffer 流式播放
-```
-
-详见 `docs/architecture.md`
+部署文件全部在 `~` 下，删掉项目目录不影响运行。
 
 ## 依赖
 
