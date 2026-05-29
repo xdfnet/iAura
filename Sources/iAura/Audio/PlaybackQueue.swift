@@ -12,6 +12,7 @@ actor PlaybackQueue {
     private var isProcessing = false
     private let player = AudioPlayer()
     private let engine: TTSEngine
+    private let media = MediaController()
 
     init(engine: TTSEngine) {
         self.engine = engine
@@ -28,27 +29,33 @@ actor PlaybackQueue {
     private func processNext() async {
         guard !jobs.isEmpty else { isProcessing = false; return }
         isProcessing = true
-        let job = jobs.removeFirst()
-
-        Log.info("TTS 播放开始 [\(job.source)] \(job.text.prefix(30))...")
-        let startedAt = Date()
-
-        do {
-            let stream = await engine.synthesizeStream(text: job.text, voiceID: job.voiceID)
-            var totalBytes = 0
-            var chunkCount = 0
-            for try await pcm in stream {
-                chunkCount += 1
-                totalBytes += pcm.count
-                player.write(pcm)
-            }
-            Log.info("播放写入: chunks=\(chunkCount) bytes=\(totalBytes)")
-            await player.drain()
-            Log.info("TTS 播放完成 [\(job.source)] \(String(format: "%.1f", -startedAt.timeIntervalSinceNow))s")
-        } catch {
-            Log.error("TTS 合成失败: \(error)")
+        media.pause()
+        defer {
+            media.resume()
+            isProcessing = false
         }
 
-        await processNext()
+        while !jobs.isEmpty {
+            let job = jobs.removeFirst()
+
+            Log.info("TTS 播放开始 [\(job.source)] \(job.text.prefix(30))...")
+            let startedAt = Date()
+
+            do {
+                let stream = await engine.synthesizeStream(text: job.text, voiceID: job.voiceID)
+                var totalBytes = 0
+                var chunkCount = 0
+                for try await pcm in stream {
+                    chunkCount += 1
+                    totalBytes += pcm.count
+                    player.write(pcm)
+                }
+                Log.info("播放写入: chunks=\(chunkCount) bytes=\(totalBytes)")
+                await player.drain()
+                Log.info("TTS 播放完成 [\(job.source)] \(String(format: "%.1f", -startedAt.timeIntervalSinceNow))s")
+            } catch {
+                Log.error("TTS 合成失败: \(error)")
+            }
+        }
     }
 }
