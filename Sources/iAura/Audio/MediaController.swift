@@ -3,18 +3,17 @@ import CoreGraphics
 import Foundation
 
 struct MediaController {
-    /// 发送媒体键（播放/暂停切换）
     func pause() {
         Log.info("媒体控制: 暂停")
-        sendMediaKey()
+        simulateMediaKey()
     }
 
     func resume() {
         Log.info("媒体控制: 恢复")
-        sendMediaKey()
+        simulateMediaKey()
     }
 
-    private func sendMediaKey() {
+    private func simulateMediaKey() {
         let key: Int32 = 16  // NX_KEYTYPE_PLAY
 
         func post(data1: Int) {
