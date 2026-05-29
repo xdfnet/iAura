@@ -1,3 +1,5 @@
+// @unchecked Sendable: AVAudioEngine 需要在实时音频线程操作，不能使用 actor。
+// 所有可变状态通过 serialQueue 串行化，线程安全由手工保证。
 import AVFoundation
 import Foundation
 
@@ -6,24 +8,33 @@ final class AudioPlayer: @unchecked Sendable {
     private let node = AVAudioPlayerNode()
     private let format: AVAudioFormat
     private let serialQueue = DispatchQueue(label: "iaura.audio")
-    private var totalFrames: AVAudioFrameCount = 0
+    private var pendingCount = 0
     private var started = false
+    private var initError: String?
 
     init() {
         format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 48000, channels: 1, interleaved: false)!
+
+        var ok = true
         serialQueue.sync {
             engine.attach(node)
             engine.connect(node, to: engine.mainMixerNode, format: format)
             engine.prepare()
+            do {
+                try engine.start()
+            } catch {
+                initError = "AudioEngine 启动失败: \(error)"
+                Log.error(initError!)
+                ok = false
+                return
+            }
         }
-        do { try engine.start() } catch {
-            Log.error("AudioEngine: \(error)")
-            return
-        }
+        guard ok else { return }
         node.play()
-        totalFrames = 0
         started = true
     }
+
+    var isStarted: Bool { started }
 
     func write(_ pcm: Data) {
         guard started, !pcm.isEmpty else { return }
@@ -37,16 +48,19 @@ final class AudioPlayer: @unchecked Sendable {
                     dst.initialize(from: srcPtr, count: Int(frames))
                 }
             }
-            node.scheduleBuffer(buffer)
-            totalFrames += frames
+            pendingCount += 1
+            node.scheduleBuffer(buffer) { [weak self] in
+                self?.serialQueue.async { self?.pendingCount -= 1 }
+            }
         }
     }
 
     func drain() async {
-        let frames = serialQueue.sync { totalFrames }
-        let sec = Double(frames) / format.sampleRate
-        try? await Task.sleep(nanoseconds: UInt64(max(sec, 0.5) * 1_000_000_000) + 500_000_000)
-        serialQueue.sync { totalFrames = 0 }
+        for _ in 0..<1200 {
+            let done = serialQueue.sync { pendingCount == 0 }
+            if done { break }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
     }
 
     func stop() {

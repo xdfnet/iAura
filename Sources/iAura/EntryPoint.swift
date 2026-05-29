@@ -15,6 +15,7 @@ struct iAura: AsyncParsableCommand {
             StatusCommand.self,
             VersionCommand.self,
             RestartCommand.self,
+            ModelCommand.self,
         ],
         defaultSubcommand: ServeCommand.self
     )

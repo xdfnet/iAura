@@ -1,6 +1,8 @@
 import Foundation
 import os.log
 
+private let maxLogSize: UInt64 = 5 * 1024 * 1024  // 5MB
+
 enum Log {
     private static let subsystem = "com.user.iaura"
     private static let log = OSLog(subsystem: subsystem, category: "daemon")
@@ -28,6 +30,8 @@ enum Log {
             let data = Data(line.utf8)
             let dir = (filePath as NSString).deletingLastPathComponent
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: nil)
+
+            rotateIfNeeded()
             if !FileManager.default.fileExists(atPath: filePath) {
                 FileManager.default.createFile(atPath: filePath, contents: data)
                 return
@@ -37,6 +41,16 @@ enum Log {
             handle.write(data)
             handle.closeFile()
         }
+    }
+
+    private static func rotateIfNeeded() {
+        let fm = FileManager.default
+        guard let attrs = try? fm.attributesOfItem(atPath: filePath),
+              let size = attrs[.size] as? UInt64,
+              size > maxLogSize else { return }
+        let bak = filePath + ".old"
+        try? fm.removeItem(atPath: bak)
+        try? fm.moveItem(atPath: filePath, toPath: bak)
     }
 
     private static func timestamp() -> String {
