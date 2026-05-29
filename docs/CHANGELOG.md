@@ -1,5 +1,18 @@
 # iAura 开发日志
 
+## v1.1.0 — 2026-05-29
+
+### 安装简化
+- Codex hook 不再修改 `~/.codex/config.toml`，首次触发时由 Codex 自动引导授权
+- 移除旧版 Swift HookInstaller（逻辑迁入 Python 脚本）
+- 清理 Installer 中的 `hashlib`/`re` 等已不需要的导入
+
+### 文档
+- 重构 README：从用户视角按命令分组，特性卡片 + shields.io 徽章
+- 架构文档随代码同步更新
+- 移除冗余的 release-notes 文件，内容已合并到 CHANGELOG
+- 移除 Homebrew 安装方式说明
+
 ## v1.0.0 — 2026-05-29
 
 ### 正式发布

@@ -81,7 +81,7 @@ iaura model pull          # 下载 Qwen3-TTS 模型（首次必做）
 安装后自动接入三个 AI 工具：
 
 - **Claude Code** → `~/.claude/settings.json` — Stop Hook
-- **Codex** → `~/.codex/hooks.json` + `config.toml` — Stop Hook + trusted_hash
+- **Codex** → `~/.codex/hooks.json` — Stop Hook（首次触发时授权即可）
 - **Pi** → `~/.pi/agent/settings.json` — Extension 注册
 
 Codex 用户注意：首次触发 Hook 时需要确认允许，之后自动生效。

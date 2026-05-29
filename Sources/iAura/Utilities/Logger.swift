@@ -37,9 +37,9 @@ enum Log {
                 return
             }
             guard let handle = FileHandle(forWritingAtPath: filePath) else { return }
-            handle.seekToEndOfFile()
-            handle.write(data)
-            handle.closeFile()
+            defer { try? handle.close() }
+            try? handle.seekToEnd()
+            try? handle.write(contentsOf: data)
         }
     }
 

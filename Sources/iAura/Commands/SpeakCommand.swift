@@ -24,7 +24,8 @@ struct SpeakCommand: AsyncParsableCommand {
         if let voice, !voice.isEmpty { parts.append("voice:\(voice)") }
         let prefix = parts.isEmpty ? "" : "{\(parts.joined(separator: ","))}"
         try SocketClient.send(prefix + text, to: socketPath)
-        print("[✓] 已发送播报请求")
+        // Hook-compatible: stdout must be clean JSON, no diagnostic output
+        fputs("[✓] 已发送播报请求\n", stderr)
     }
 }
 

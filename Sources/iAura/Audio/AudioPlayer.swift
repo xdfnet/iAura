@@ -50,7 +50,8 @@ final class AudioPlayer: @unchecked Sendable {
             }
             pendingCount += 1
             node.scheduleBuffer(buffer) { [weak self] in
-                self?.serialQueue.async { self?.pendingCount -= 1 }
+                guard let self else { return }
+                self.serialQueue.async { self.pendingCount -= 1 }
             }
         }
     }

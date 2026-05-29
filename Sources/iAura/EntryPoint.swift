@@ -9,13 +9,11 @@ struct iAura: AsyncParsableCommand {
         subcommands: [
             ServeCommand.self,
             SpeakCommand.self,
-            SetupCommand.self,
             VoiceCommand.self,
             StopCommand.self,
             StatusCommand.self,
             VersionCommand.self,
             RestartCommand.self,
-            ModelCommand.self,
         ],
         defaultSubcommand: ServeCommand.self
     )
