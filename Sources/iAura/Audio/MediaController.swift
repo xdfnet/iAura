@@ -1,20 +1,21 @@
 import Foundation
 
 struct MediaController {
-    private static let apiURL = URL(string: "http://127.0.0.1:8888/api/space")!
+    private static let baseURL = "http://127.0.0.1:8888"
 
     func pause() {
         Log.info("媒体控制: 暂停")
-        sendToggle()
+        send("/api/pause")
     }
 
     func resume() {
         Log.info("媒体控制: 恢复")
-        sendToggle()
+        send("/api/play")
     }
 
-    private func sendToggle() {
-        var request = URLRequest(url: Self.apiURL)
+    private func send(_ path: String) {
+        guard let url = URL(string: Self.baseURL + path) else { return }
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 2
         let semaphore = DispatchSemaphore(value: 0)
