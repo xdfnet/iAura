@@ -12,7 +12,6 @@ MODEL_DIR  := $(HOME)/.config/iaura/models
 HOOK_SH    := $(HOME)/.config/iaura/hook-speak.sh
 IAURA_TS   := $(HOME)/.config/iaura/iaura.ts
 LOG        := $(HOME)/.config/iaura/daemon.log
-ENTITLEMENTS := entitlements.plist
 
 # ─── 全流程 ──────────────────────────────────────────
 all: init deploy model launchd
@@ -114,7 +113,7 @@ sign:
 		id=$$(security find-identity -v -p basic 2>/dev/null | grep -v REVOKED | grep -m1 '^ *[0-9]*)' | sed -E 's/^ *[0-9]+\) "(.+)".*/\1/'); \
 	fi; \
 	if [ -n "$$id" ]; then \
-		codesign --force --sign "$$id" --entitlements $(ENTITLEMENTS) .build/release/iAura; \
+		codesign --force --sign "$$id" .build/release/iAura; \
 		echo "✓  签名完成"; \
 	else \
 		echo "⚠️  未找到有效的签名身份"; \

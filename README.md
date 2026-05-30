@@ -28,8 +28,8 @@ git clone https://github.com/xdfnet/iAura && cd iAura
 ./install.sh              # 编译 + 签名 + 部署，一条命令搞定
 ```
 
-> 首次安装后去 **系统设置 → 隐私与安全性 → 辅助功能** 添加 iAura，  
-> 播报时就能自动暂停音乐了（可选）。
+> 播报时通过 [iDict](https://github.com/xdfnet/iDict) 自动暂停/恢复音乐，  
+> 需同时安装 iDict 并保持运行。
 
 ## 使用
 
@@ -118,6 +118,7 @@ make clean                # 清理 .build
 - macOS 14 Sonoma+
 - Apple Silicon (M1+)
 - Swift 6 / Xcode 15+
+- [iDict](https://github.com/xdfnet/iDict) — 媒体控制（保持运行即可，无需额外配置）
 
 ## 许可
 

@@ -1,38 +1,31 @@
-import AppKit
-import CoreGraphics
 import Foundation
 
 struct MediaController {
+    private static let apiURL = URL(string: "http://127.0.0.1:8888/api/space")!
+
     func pause() {
         Log.info("媒体控制: 暂停")
-        simulateMediaKey()
+        sendToggle()
     }
 
     func resume() {
         Log.info("媒体控制: 恢复")
-        simulateMediaKey()
+        sendToggle()
     }
 
-    private func simulateMediaKey() {
-        let key: Int32 = 16  // NX_KEYTYPE_PLAY
-
-        func post(data1: Int) {
-            guard let nsEvent = NSEvent.otherEvent(
-                with: .systemDefined,
-                location: .zero,
-                modifierFlags: [],
-                timestamp: 0,
-                windowNumber: 0,
-                context: nil,
-                subtype: 8,
-                data1: data1,
-                data2: -1
-            ) else { return }
-            nsEvent.cgEvent?.post(tap: .cghidEventTap)
-        }
-
-        post(data1: Int((key << 16) | (0xA << 8)))  // down
-        usleep(100_000)
-        post(data1: Int((key << 16) | (0xB << 8)))  // up
+    private func sendToggle() {
+        var request = URLRequest(url: Self.apiURL)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 2
+        let semaphore = DispatchSemaphore(value: 0)
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            if let error = error {
+                Log.error("媒体控制请求失败: \(error.localizedDescription)")
+            } else if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                Log.error("媒体控制返回非 200: \(http.statusCode)")
+            }
+            semaphore.signal()
+        }.resume()
+        semaphore.wait()
     }
 }
