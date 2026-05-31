@@ -1,5 +1,22 @@
 # iAura 开发日志
 
+## v1.1.1 — 2026-05-31
+
+### 播放队列优化
+- 新播报请求入队时自动丢弃队列中所有未开始的待播任务
+- 正在合成/播放的不打断，播完自动切到最新一条
+- 避免连续对话中旧回复堆积，始终优先播最新内容
+
+### 媒体控制重构
+- 从 `CGEvent` 系统媒体键改为调用 [iDict](https://github.com/xdfnet/iDict) HTTP API
+- 移除 `entitlements.plist`，不再需要辅助功能权限
+- 不再需要 Apple Development 证书签名
+- `install.sh` 简化：跳过代码签名步骤
+
+### 文档
+- 更新 README、架构文档、CHANGELOG
+- `install.sh` 移除过时的辅助功能权限提示
+
 ## v1.1.0 — 2026-05-29
 
 ### 安装简化

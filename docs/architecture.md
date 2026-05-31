@@ -24,7 +24,7 @@
 │                         ▼                                  │
 │                  PlaybackQueue (actor)                      │
 │                    ┌─────┴─────┐                            │
-│                    │ MediaController│  ← CGEvent 媒体键      │
+│                    │ MediaController│  ← iDict HTTP API      │
 │                    │  pause/resume │    暂停/恢复音乐       │
 │                    └─────┬─────┘                            │
 │              ┌──────────┴──────────┐                       │
@@ -123,14 +123,15 @@ iaura voice list
    - 显式 {voice:xxx} 可覆盖
    - cleanText() 清洗 Markdown
 4. PlaybackQueue.enqueue(job)
-   - MediaController.pause() — 暂停音乐
+   - 新请求入队 → 丢弃所有 pending 旧任务
+   - MediaController 调 iDict /api/pause — 暂停音乐
 5. TTSEngine.synthesizeStream() → AsyncThrowingStream<Data>
    - MLX GPU 推理，每 80ms float32 chunk
    - audioToPCM: 24k→48k 上采样 + float32→int16
    - 失败自动重试 2 次，间隔 500ms
 6. AudioPlayer.write(pcm) → scheduleBuffer 流式播放
 7. player.drain() — 轮询等待 buffer 播完
-8. MediaController.resume() — 恢复音乐
+8. MediaController 调 iDict /api/play — 恢复音乐
 ```
 
 ## 音色匹配
@@ -146,8 +147,8 @@ ConnectionHandler.extractVoicePrefix():
 
 ## 媒体控制
 
-`CGEvent.post(tap: .cghidEventTap)` 注入系统媒体键，等效键盘播放/暂停。
-需要 **辅助功能权限**，Apple Development 证书签名后权限持久绑定。
+`MediaController` 通过调用 [iDict](https://github.com/xdfnet/iDict) 的 `/api/pause` 和 `/api/play` 来实现播报时暂停音乐、播完恢复。  
+需要 iDict 运行在 `127.0.0.1:8888`（iDict 默认端口），**不再需要辅助功能权限或代码签名**。
 
 ## 日志
 
@@ -160,7 +161,6 @@ ConnectionHandler.extractVoicePrefix():
 ```
 ~/.local/bin/iaura                          # CLI 入口
 ~/.local/share/iaura/runtime/iAura          # 二进制
-~/.local/share/iaura/runtime/default.metallib # MLX Metal 库
 ~/.config/iaura/config.json                 # 配置
 ~/.config/iaura/voices/*.wav                # 参考音色
 ~/.config/iaura/hook-speak.sh               # Hook 脚本

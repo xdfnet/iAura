@@ -19,6 +19,11 @@ actor PlaybackQueue {
     }
 
     func enqueue(_ job: PlaybackJob) {
+        // 新请求进来时，丢弃所有尚未开始播的（正在播的已从 jobs 取出）
+        if !jobs.isEmpty {
+            Log.info("丢弃待播: \(jobs.count) 条")
+        }
+        jobs.removeAll()
         jobs.append(job)
         Log.info("队列状态: pending=\(jobs.count) processing=\(isProcessing)")
         if !isProcessing {
