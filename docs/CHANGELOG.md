@@ -1,5 +1,16 @@
 # iAura 开发日志
 
+## v1.2.0 — 2026-05-31
+
+### 版本号统一管理
+- 新增 `Sources/iAura/Utilities/Version.swift` 作为单一版本源
+- `VersionCommand` 引用 `iAuraVersion` 常量，不再硬编码
+- Makefile 新增 `version` 目标：`make version V=v1.2.0` 自动改文件、commit、打 tag
+- 架构文档移除 `make sign`，替换为 `make version`
+
+### 文档
+- README、架构文档、Makefile help 同步更新
+
 ## v1.1.1 — 2026-05-31
 
 ### 播放队列优化
