@@ -51,7 +51,7 @@ make model      = 下载 TTS 模型（第 3 层）
 make launchd    = 注册自启 + 启动 daemon（第 4 层）
 make uninstall  = 停服务 + 删文件
 make run        = 前台调试
-make sign       = 签名
+make version    = 发版（make version V=v1.2.0）
 make clean      = 删除 .build
 ```
 

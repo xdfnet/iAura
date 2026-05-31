@@ -119,6 +119,20 @@ sign:
 		echo "⚠️  未找到有效的签名身份"; \
 	fi
 
+# ─── 版本 ──────────────────────────────────────────
+# make version V=v1.2.0
+version:
+	@if [ -z "$(V)" ]; then \
+		echo "用法: make version V=v1.x.x"; exit 1; \
+	fi
+	@echo "$(V)" | grep -q '^v[0-9]\+\.[0-9]\+\.[0-9]\+$$' || { echo "格式错误：需要 vX.Y.Z"; exit 1; }
+	sed -i '' 's/let iAuraVersion = ".*"/let iAuraVersion = "$(subst v,,$(V))"/' Sources/iAura/Utilities/Version.swift
+	git add Sources/iAura/Utilities/Version.swift
+	git commit -m "chore: 版本号 $(V)"
+	-git tag -d "$(V)" 2>/dev/null; true
+	git tag "$(V)"
+	@echo "✓ 版本 $(V) 已就绪，运行 git push origin main --tags 发布"
+
 clean:
 	rm -rf .build
 
@@ -133,5 +147,5 @@ help:
 	@echo "  make launchd    = 注册自启 + 启动 daemon（第 4 层）"
 	@echo "  make uninstall  = 停服务 + 删文件"
 	@echo "  make run        = 前台调试"
-	@echo "  make sign       = 签名"
+	@echo "  make version    = 发版（make version V=v1.2.0）"
 	@echo "  make clean      = 删除 .build"
